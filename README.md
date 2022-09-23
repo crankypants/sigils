@@ -1,22 +1,22 @@
-# sigils
+ sigils
 
-#new game,		
+new game,		
 
-#leshy play,
+leshy play,
 
-#player play,	draw,			check if first turn
-#		deck not empty?,	deck empty = L
-#	play,	play card,		check for cost, 	sacrifice
-#		recursive play,	
-#	bell,
+player play,	draw,			check if first turn
+		deck not empty?,	deck empty = L
+	play,	play card,		check for cost, 	sacrifice
+		recursive play,	
+	bell,
 
-#attack	attack,
-#	win state?,	is this last match,
-#	switch player,
+attack	attack,
+	win state?,	is this last match,
+	switch player,
 
-#leshy move,	move back row,
-#	replace back row,
-#	front row attack,
-#	win state?,
+leshy move,	move back row,
+	replace back row,
+	front row attack,
+	win state?,
 
-#goto player play
+goto player play
