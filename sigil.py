@@ -85,10 +85,10 @@ class Hand(CardSet):
 
 class Field():
     # Class to represent the field where cards are played
-    lanes = 3
-    preplay = [None, None, None]
-    p1 = [None, None, None]
-    p2 = [None, None, None]
+    lanes = 4
+    preplay = [None] * lanes
+    p1 = [None] * lanes
+    p2 = [None] * lanes
     field = [preplay, p1, p2]
 
     def __init__(self):
@@ -96,7 +96,7 @@ class Field():
 
     def play(self, player, card, lane):
         if self.field[player][lane] is not None:
-            print('Not an open space')
+            raise InputError('Not an open space')
         else: 
             self.field[player][lane] = card
         return
@@ -119,51 +119,108 @@ class Field():
         return self.log()
 
 
-class Test:
-    lanes = 3
+# states
+class STATE:
+    NEW = 1
+    PICK = 2
+    PLACE = 3
+    ATTACK = 4
+    GAMEOVER = 5
+
+class EVENT:
+    PICK_CARD = 1
+    PICK_LANE = 2
+    BELL = 3
+    QUIT = 4
+
+class InputError(Exception):
+    def __init__(self, data):
+        self.data = data
+    def __str__(self):
+        return repr(self.data)
+
+class Game():
+
+    lanes = 4
     deck = {}
-    playerDeck = {}
-    hand = {}
-    field = {}
 
     def __init__(self):
         # initialize a new Deck
-        self.deck = FullDeck()
-
+        deck = FullDeck()
         # initialize a playing surface
         self.field = Field()
-        print()
-        print("Full Deck: %s" % self.deck)
-        print()
-
         # Draw 6 random cards from deck to make a player deck
-        self.playerDeck = PlayerDeck(self.deck.draw(6).cards)
-        print("Player Deck: %s" % self.playerDeck)
-        print()
-
+        self.playerDeck = PlayerDeck(deck.draw(6).cards)
         # Draw 3 cards from player deck to make a player hand
-        print("now drawing a hand of 3")
         self.hand = self.playerDeck.draw(3);
-        print("hand: %s" % self.hand)
-        print()
+        # set the state to new
+        self.state = STATE.PICK
+        self.selectedCard = None
+        
+    def event(self, e, i=None):
+        if e == EVENT.QUIT:
+            self.state = STATE.GAMEOVER
+        if self.state == STATE.ATTACK:
+            self.state = STATE.GAMEOVER
+        if self.state == STATE.PICK:
+            if e == EVENT.PICK_CARD:
+                try:
+                    self.selectedCard = self.hand.cards.pop(i)
+                    self.state = STATE.PLACE
+                except:
+                    raise InputError("Not a valid card")
+            if e == EVENT.BELL:
+                self.state = STATE.ATTACK
+        elif self.state == STATE.PLACE:
+            if e == EVENT.PICK_LANE:
+                try:
+                    self.field.play(2, self.selectedCard, i)
+                    self.selectedCard = None
+                    self.state = STATE.PICK
+                except:
+                    raise InputError("Not a valid lane")
 
-        # validate they cards are removed from the player deck
-        print("Player Deck: %s" % self.playerDeck)
-        print()
 
-        # show the state of the empty field
-        print('Field:')
-        print(self.field)
-        print()
+class Test:
 
-        # Player puts a card on the field
-        print('Player plays first card to first lane')
-        self.field.play(2, self.hand.cards.pop(0), 0)
-        print(self.field)
-        print()
+    def __init__(self):
+        # initialize a new Game
+        self.game = Game()
 
-        # validate the card is removed from the hand
-        print("hand: %s" % self.hand)
+        # GAME LOOP
+        while not self.game.state == STATE.GAMEOVER:
+
+            print()
+            print(self.game.field)
+            print()
+            print(self.game.hand)
+            print()
+            
+            match self.game.state:
+                case STATE.PICK:
+                    while True:
+                        inp = input("Select a card (1-3) or (b) for bell:")
+                        if inp == 'b':
+                            self.game.event(EVENT.BELL)
+                            break
+                        try:
+                            self.game.event(EVENT.PICK_CARD, int(inp) - 1)
+                        except:
+                            print("Invalid Input")
+                            continue
+                        break
+                    while True and self.game.state == STATE.PLACE:
+                        inp = input("Select a position to play(1-4):")
+                        try:
+                            self.game.event(EVENT.PICK_LANE, int(inp) - 1)
+                        except:
+                            print("Invalid Input")
+                            continue
+                        break
+                case STATE.ATTACK:
+                    print("Attack!!")
+                    print("you lose")
+                    self.game.event(EVENT.QUIT)
 
 def main():
     test = Test()
